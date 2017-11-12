@@ -39,13 +39,12 @@ const server = new service.ServiceCloudServer({
 
 server.addService(service1);
 server.addService(service2);
-server.addService(service3);
-// ...
+server.addService([ service4, service5 /* [...] */ ]);
 ```
 
 ## Link servers together to create the cloud (network of servers)
 
-If the server cannot find the requested service, it can ask to its gateway. If the gateway has a gateway, it can ask its gateway too, leading to a network of services.
+If the server cannot find the requested service, it can ask to its gateways. If the gateway has gateways, it can ask to them too, leading to a network of services.
 
 ```javascript
 const server = new service.ServiceCloudServer({
@@ -53,13 +52,25 @@ const server = new service.ServiceCloudServer({
     port: 1900
 });
 
-server.setResolveGateway('http://localhost:1818'); // Only one gateway allowed at a time
-server.setResolveGateway({
+server.addResolveGateway('http://localhost:1818');
+server.addResolveGateway([ 'http://localhost:1818', 'http://localhost:1819' /* [...] */ ]);
+server.addResolveGateway({
     address: 'localhost',
     port: 2000,
     path: '/my/root/path',
     protocol: 'https:'
-}); // This will override the previous one
+});
+server.addResolveGateway([{
+    address: 'localhost',
+    port: 2000,
+    path: '/my/root/path',
+    protocol: 'https:'
+}, {
+    address: 'localhost',
+    port: 2005,
+    path: '/my/root/path',
+    protocol: 'https:'
+} /* [...] */ );
 ```
 
 ## Link a specific service to a server

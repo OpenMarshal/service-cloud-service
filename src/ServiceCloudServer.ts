@@ -21,16 +21,22 @@ export class ServiceCloudServer
         }
     } = {};
     protected app : Express;
-    protected resolveGateway : ServiceCloudRemote;
+    protected resolveGateways : ServiceCloudRemote[];
     public remote : ServiceCloudRemote;
 
-    public setResolveGateway(remote : ServiceCloudRemoteUrl) : void
+    public addResolveGateway(remote : ServiceCloudRemoteUrl[]) : void
+    public addResolveGateway(remote : ServiceCloudRemoteUrl) : void
+    public addResolveGateway(remote : ServiceCloudRemoteUrl | ServiceCloudRemoteUrl[]) : void
     {
-        this.resolveGateway = parseRemote(remote);
+        if(Array.isArray(remote))
+            return (remote as ServiceCloudRemoteUrl[]).forEach((remote) => this.addResolveGateway(remote));
+        
+        this.resolveGateways.push(parseRemote(remote));
     }
 
     public constructor(remote : ServiceCloudRemoteUrl)
     {
+        this.resolveGateways = [];
         this.remote = parseRemote(remote);
 
         this.app = express();
@@ -110,14 +116,34 @@ export class ServiceCloudServer
                 remote: this.references[inputData.serviceName][inputData.actionName]
             });
 
-        if(this.resolveGateway)
-            return ServiceCloudClient.resolve(inputData.serviceName, inputData.actionName, this.resolveGateway, inputData.ttl, callback);
+        if(this.resolveGateways.length > 0)
+        {
+            let nb = this.resolveGateways.length;
+            return this.resolveGateways.forEach((gateway) => {
+                ServiceCloudClient.resolve(inputData.serviceName, inputData.actionName, gateway, inputData.ttl, (e, final) => {
+                    if(e || nb <= 0)
+                    {
+                        if(--nb === 0)
+                            callback(e);
+                        return;
+                    }
+                    
+                    nb = 0;
+                    callback(undefined, final);
+                });
+            });
+        }
         
         callback(new Error('Cannot resolve the service / action : ' + inputData.serviceName + ' / ' + inputData.actionName));
     }
 
     public addService(service : ServiceCloudService) : void
+    public addService(service : ServiceCloudService[]) : void
+    public addService(service : ServiceCloudService | ServiceCloudService[]) : void
     {
+        if(Array.isArray(service))
+            return (service as ServiceCloudService[]).forEach((service) => this.addService(service));
+        
         this.services[service.serviceName] = service;
         service.server = this;
 
