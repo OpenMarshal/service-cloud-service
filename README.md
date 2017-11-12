@@ -15,7 +15,7 @@ const server = new service.ServiceCloudServer({
 });
 
 const service = new service.ServiceCloudService('hello-world');
-service.addAction('say', function(data, callback) {
+serviceHelloWorld.addAction('say', function(data, callback) {
     const messages = {
         'en': 'Hello World!',
         'fr': 'Bonjour le Monde!',
@@ -26,7 +26,7 @@ service.addAction('say', function(data, callback) {
         message: messages[data.language]
     });
 });
-server.addService(service);
+server.addService(serviceHelloWorld);
 ```
 
 ## Add other services to the same server
